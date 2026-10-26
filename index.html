@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>จักรวาลพันธะไอออนิก 3D | วิทยาศาสตร์ ม.1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--glass:rgba(16,20,58,.58);--line:rgba(255,255,255,.16);--tx:#eef1ff;--mu:#a9b2e6;--cy:#6fe3ff;--pk:#ff7eb6;--gd:#ffd95e;--ok:#5ef0b0;--bad:#ff7a8a}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'Prompt',sans-serif;color:var(--tx);background:radial-gradient(ellipse at 18% 8%,#33207a 0,#0d1033 46%,#04050f 100%);overflow:hidden}
+button{font-family:inherit;color:inherit;cursor:pointer}
+.app{display:grid;grid-template-columns:minmax(0,1fr) 420px;height:100%}
+#stage{position:relative;min-width:0;min-height:0;overflow:hidden}
+#c{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+.hud{position:absolute;left:14px;right:14px;display:flex;gap:8px;flex-wrap:wrap;z-index:4;pointer-events:none}
+.hud.top{top:14px;justify-content:space-between}
+.hud.bot{bottom:14px;justify-content:center}
+.hud.bot button{pointer-events:auto}
+.badge{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:8px 16px;border-radius:999px;font-size:.85rem;font-weight:500}
+.badge b{color:var(--gd)}
+.fab{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);padding:10px 18px;border-radius:999px;font-size:.88rem;font-weight:500;transition:transform .2s,background .2s,box-shadow .2s}
+.fab:hover{transform:translateY(-2px);background:rgba(111,227,255,.2);box-shadow:0 8px 24px rgba(111,227,255,.2)}
+.fab.on{background:linear-gradient(135deg,#7a5cff,#ff7eb6);border-color:transparent}
+.hint{position:absolute;top:62px;left:14px;font-size:.75rem;color:var(--mu);z-index:4;max-width:300px;line-height:1.5;pointer-events:none}
+.hs{position:absolute;transform:translate(-50%,-50%);width:36px;height:36px;border-radius:50%;border:2px solid rgba(255,255,255,.7);background:rgba(255,217,94,.28);backdrop-filter:blur(4px);font-size:16px;display:none;align-items:center;justify-content:center;z-index:3;animation:ping 2s infinite}
+.hs:hover{background:rgba(255,217,94,.55)}
+@keyframes ping{0%{box-shadow:0 0 0 0 rgba(255,217,94,.55)}80%,100%{box-shadow:0 0 0 16px rgba(255,217,94,0)}}
+.info{position:absolute;left:14px;bottom:72px;width:min(370px,calc(100% - 28px));background:linear-gradient(160deg,rgba(40,30,110,.82),rgba(14,18,56,.86));border:1px solid rgba(255,255,255,.28);border-radius:22px;padding:16px 18px 16px 70px;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);z-index:5;display:none;box-shadow:0 18px 50px rgba(0,0,0,.45)}
+.info.show{display:block;animation:pop .45s cubic-bezier(.2,1.3,.4,1)}
+@keyframes pop{from{opacity:0;transform:translateY(22px) scale(.92)}to{opacity:1;transform:none}}
+.info .ii{position:absolute;left:16px;top:16px;width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,#ffd95e,#ff9a62);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 6px 18px rgba(255,170,80,.4)}
+.info h4{font-size:1rem;font-weight:600;color:var(--gd);margin-bottom:4px}
+.info p{font-size:.83rem;line-height:1.65;color:#dfe4ff}
+.info b{color:var(--cy)}
+#ix{position:absolute;right:10px;top:8px;background:none;border:none;font-size:1.3rem;color:var(--mu)}
+#err{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:30px;z-index:9;background:#0a0c2e;line-height:1.7}
+.panel{overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-left:1px solid var(--line);scrollbar-width:thin;scrollbar-color:#5a54b8 transparent}
+.brand{display:flex;gap:12px;align-items:center}
+.brand .logo{width:46px;height:46px;border-radius:16px;background:linear-gradient(135deg,#7a5cff,#ff7eb6);display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 8px 22px rgba(122,92,255,.45)}
+.brand h1{font-size:1.2rem;font-weight:700}
+.brand p{font-size:.74rem;color:var(--mu)}
+.card{background:rgba(255,255,255,.07);border:1px solid var(--line);border-radius:18px;padding:14px}
+.card h3{font-size:.92rem;font-weight:600;margin-bottom:8px}
+.card p{font-size:.8rem;line-height:1.65;color:#d6dcff}
+.row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:.84rem;font-weight:500}
+.val{font-weight:700;font-size:1.05rem;padding:1px 12px;border-radius:10px;background:rgba(0,0,0,.28)}
+.cat .val{color:var(--cy)}
+.ani .val{color:var(--pk)}
+input[type=range]{width:100%;height:6px;border-radius:6px;appearance:none;-webkit-appearance:none;outline:none;margin:6px 0}
+.cat input{background:linear-gradient(90deg,#3b6cff,#6fe3ff)}
+.ani input{background:linear-gradient(90deg,#c43d8e,#ff7eb6)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid #7a5cff;box-shadow:0 0 14px rgba(255,255,255,.7);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid #7a5cff;cursor:pointer}
+.ticks{display:flex;justify-content:space-between;font-size:.68rem;color:var(--mu)}
+.presets{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.presets button{padding:8px 0;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.08);font-size:.8rem;transition:.2s}
+.presets button:hover{background:rgba(122,92,255,.5)}
+.formula{text-align:center;background:radial-gradient(circle at 50% 0,rgba(122,92,255,.55),rgba(255,126,182,.18) 70%)}
+.formula small{font-size:.72rem;color:var(--mu)}
+#fm{font-size:2.5rem;font-weight:700;color:var(--gd);text-shadow:0 0 22px rgba(255,217,94,.55);line-height:1.3}
+#fm.flash{animation:fl .6s}
+@keyframes fl{0%{transform:scale(1.25);filter:brightness(1.6)}100%{transform:none}}
+.two{display:grid;grid-template-columns:1fr;gap:10px}
+.sec{font-size:1rem;font-weight:700;margin-top:4px}
+.q p{margin-bottom:10px;font-size:.84rem;color:#fff}
+.opts{display:grid;gap:6px}
+.opts button{text-align:left;padding:9px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.06);font-size:.8rem;line-height:1.5;transition:.2s}
+.opts button:hover{background:rgba(111,227,255,.18)}
+.opts button.ok{background:rgba(94,240,176,.25);border-color:var(--ok)}
+.opts button.no{background:rgba(255,122,138,.25);border-color:var(--bad)}
+.fb{display:none;margin-top:8px;padding:9px 12px;border-radius:12px;font-size:.78rem;line-height:1.6;animation:pop .4s}
+.fb.g{display:block;background:rgba(94,240,176,.15);border:1px solid var(--ok)}
+.fb.r{display:block;background:rgba(255,122,138,.15);border:1px solid var(--bad)}
+.score{display:flex;justify-content:space-between;align-items:center;font-size:.85rem}
+.score button{padding:6px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.08);font-size:.76rem}
+.foot{font-size:.68rem;color:var(--mu);text-align:center;padding:6px 0 4px}
+@media(max-width:980px){body{overflow:auto}.app{grid-template-columns:1fr;grid-template-rows:62vh auto;height:auto;min-height:100%}.panel{overflow:visible;border-left:none;border-top:1px solid var(--line)}.hint{display:none}.two{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.two{grid-template-columns:1fr}.hud.top .badge:last-child{display:none}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<div id="stage">
+<canvas id="c"></canvas>
+<div class="hud top"><div class="badge">🚀 จักรวาลพันธะไอออนิก</div><div class="badge">⚖️ ประจุรวมสุทธิ = <b>0</b></div></div>
+<div class="hint">🖱️ ลากเพื่อหมุน · คลิกขวาลาก/สองนิ้วเพื่อแพน · ลูกกลิ้งเมาส์เพื่อซูม · คลิกดวงดาวหรือจุดเรืองแสงเพื่อเรียนรู้</div>
+<button class="hs" id="hs-cat" data-k="cat">🌟</button>
+<button class="hs" id="hs-ani" data-k="ani">🪐</button>
+<button class="hs" id="hs-e" data-k="e">☄️</button>
+<button class="hs" id="hs-bond" data-k="bond">⚡</button>
+<div class="info" id="info"><button id="ix" aria-label="ปิด">×</button><div class="ii" id="ii"></div><h4 id="it"></h4><p id="ip"></p></div>
+<div class="hud bot"><button class="fab" id="bPlay">▶ เล่นการถ่ายโอนอิเล็กตรอน</button><button class="fab" id="bCry">💎 ผลึกไอออนิก</button><button class="fab" id="bCam">🎥 รีเซ็ตกล้อง</button></div>
+<div id="err"><div>ไม่สามารถโหลด Three.js ได้<br>กรุณาเชื่อมต่ออินเทอร์เน็ตแล้วรีเฟรชหน้านี้อีกครั้ง</div></div>
+</div>
+<aside class="panel">
+<div class="brand"><div class="logo">🪐</div><div><h1>จักรวาลพันธะไอออนิก</h1><p>สื่อการเรียนรู้วิทยาศาสตร์ ชั้นมัธยมศึกษาปีที่ 1</p></div></div>
+<div class="card"><h3>🎯 วัตถุประสงค์การเรียนรู้</h3><p>สำรวจการเกิดพันธะไอออนิกระหว่างโลหะที่ <b>ให้</b> อิเล็กตรอนกับอโลหะที่ <b>รับ</b> อิเล็กตรอน ปรับประจุแล้วดูการถ่ายโอนอิเล็กตรอน การไขว้ประจุ และการเขียนสูตรเคมีให้ประจุรวมเป็นศูนย์พอดี</p></div>
+<div class="card">
+<h3>🎛️ ปรับค่าประจุไอออน</h3>
+<div class="cat"><div class="row"><span>🌟 ไอออนบวก (ให้ e⁻)</span><span class="val" id="cv">+1</span></div><input type="range" id="sc" min="1" max="3" value="1" step="1"><div class="ticks"><span>Na⁺</span><span>Mg²⁺</span><span>Al³⁺</span></div></div>
+<div class="ani" style="margin-top:12px"><div class="row"><span>🪐 ไอออนลบ (รับ e⁻)</span><span class="val" id="av">-1</span></div><input type="range" id="sa" min="1" max="3" value="1" step="1"><div class="ticks"><span>Cl⁻</span><span>O²⁻</span><span>N³⁻</span></div></div>
+<div class="presets"><button data-c="1" data-a="1">NaCl</button><button data-c="2" data-a="1">MgCl₂</button><button data-c="2" data-a="2">MgO</button><button data-c="3" data-a="2">Al₂O₃</button></div>
+</div>
+<div class="card formula"><small>สูตรเคมีที่ดุลประจุแล้ว</small><div id="fm">NaCl</div><small id="fs"></small></div>
+<div class="two">
+<div class="card"><h3>✖️ หลักการไขว้ประจุ</h3><p id="cr"></p></div>
+<div class="card"><h3>⚖️ การดุลประจุสุทธิ</h3><p id="bl"></p></div>
+</div>
+<div class="sec">📝 แบบทดสอบความเข้าใจ (3 ข้อ)</div>
+<div id="quiz"></div>
+<div class="card score"><span>คะแนน: <b id="sv">0</b> / 3</span><button id="qr">ทำใหม่</button></div>
+<div class="foot">พัฒนาด้วย HTML5 + CSS3 + Three.js</div>
+</aside>
+</div>
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+if(!window.THREE||!THREE.OrbitControls){$('err').style.display='flex';return;}
+const CAT={1:{s:'Na',c:0x5ec8ff,n:'โซเดียม'},2:{s:'Mg',c:0x9a8cff,n:'แมกนีเซียม'},3:{s:'Al',c:0xc58bff,n:'อะลูมิเนียม'}};
+const ANI={1:{s:'Cl',c:0xff7eb6,n:'คลอรีน'},2:{s:'O',c:0xff7a7a,n:'ออกซิเจน'},3:{s:'N',c:0xffb067,n:'ไนโตรเจน'}};
+const SUP={1:'⁺',2:'²⁺',3:'³⁺'},SUM={1:'⁻',2:'²⁻',3:'³⁻'};
+const state={c:1,a:1,bonded:false,crystal:false};
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+function cnt(){const g=gcd(state.c,state.a);const nc=state.a/g,na=state.c/g;return{nc,na,tot:nc*state.c};}
+const canvas=$('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(50,1,0.1,500);
+const controls=new THREE.OrbitControls(camera,canvas);
+controls.enableDamping=true;controls.dampingFactor=.07;controls.minDistance=4;controls.maxDistance=30;controls.maxPolarAngle=Math.PI*.92;
+let W=1,H=1;
+function resize(){const r=$('stage').getBoundingClientRect();W=Math.max(r.width,1);H=Math.max(r.height,1);renderer.setSize(W,H,false);camera.aspect=W/H;camera.updateProjectionMatrix();}
+function camReset(){camera.position.set(0,2.6,camera.aspect<1?17:12);controls.target.set(0,0,0);}
+scene.add(new THREE.HemisphereLight(0xbcd0ff,0x3a1d6e,.95));
+const sun=new THREE.DirectionalLight(0xfff0d0,1.35);
+sun.position.set(6,10,7);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);
+const sh=sun.shadow.camera;sh.left=-10;sh.right=10;sh.top=10;sh.bottom=-10;sh.near=1;sh.far=40;sun.shadow.radius=4;
+scene.add(sun);
+const rimA=new THREE.PointLight(0x7a6bff,1.3,45);rimA.position.set(-8,3,-6);scene.add(rimA);
+const rimB=new THREE.PointLight(0xff7eb6,1,45);rimB.position.set(8,-2,-5);scene.add(rimB);
+const floor=new THREE.Mesh(new THREE.CircleGeometry(9,64),new THREE.ShadowMaterial({opacity:.38}));
+floor.rotation.x=-Math.PI/2;floor.position.y=-2.7;floor.receiveShadow=true;scene.add(floor);
+const ring=new THREE.Mesh(new THREE.RingGeometry(8.6,9,90),new THREE.MeshBasicMaterial({color:0x8f86ff,transparent:true,opacity:.35,side:THREE.DoubleSide}));
+ring.rotation.x=-Math.PI/2;ring.position.y=-2.69;scene.add(ring);
+function glowTex(){const k=document.createElement('canvas');k.width=k.height=128;const g=k.getContext('2d');const r=g.createRadialGradient(64,64,0,64,64,64);r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(.3,'rgba(255,255,255,.35)');r.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=r;g.fillRect(0,0,128,128);return new THREE.CanvasTexture(k);}
+const GT=glowTex();
+function glow(color,size,op){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:GT,color,transparent:true,opacity:op,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));s.scale.set(size,size,1);return s;}
+function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+function labelTex(text,color){const k=document.createElement('canvas');k.width=256;k.height=96;const g=k.getContext('2d');g.fillStyle='rgba(10,12,40,.78)';rr(g,8,8,240,80,36);g.fill();g.strokeStyle=color;g.lineWidth=4;g.stroke();g.fillStyle='#fff';g.font='700 44px Prompt, sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(text,128,50);return new THREE.CanvasTexture(k);}
+const N=1800,pp=new Float32Array(N*3),pc=new Float32Array(N*3);
+for(let i=0;i<N;i++){const r=70+Math.random()*100,a=Math.random()*6.283,b=Math.acos(2*Math.random()-1);pp[i*3]=r*Math.sin(b)*Math.cos(a);pp[i*3+1]=r*Math.sin(b)*Math.sin(a);pp[i*3+2]=r*Math.cos(b);const c=new THREE.Color().setHSL(.5+Math.random()*.25,.6,.72+Math.random()*.28);pc[i*3]=c.r;pc[i*3+1]=c.g;pc[i*3+2]=c.b;}
+const sg=new THREE.BufferGeometry();
+sg.setAttribute('position',new THREE.BufferAttribute(pp,3));
+sg.setAttribute('color',new THREE.BufferAttribute(pc,3));
+const stars=new THREE.Points(sg,new THREE.PointsMaterial({size:4,map:GT,vertexColors:true,transparent:true,opacity:.9,sizeAttenuation:false,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}));
+scene.add(stars);
+const planet=new THREE.Group();
+const pm=new THREE.Mesh(new THREE.SphereGeometry(6,48,36),new THREE.MeshStandardMaterial({color:0xff9f6b,roughness:.6,emissive:0x4a1f3d,emissiveIntensity:.5}));
+const pr=new THREE.Mesh(new THREE.RingGeometry(8,12,80),new THREE.MeshBasicMaterial({color:0xffd9a8,transparent:true,opacity:.45,side:THREE.DoubleSide}));
+pr.rotation.x=Math.PI/2.3;planet.add(pm,pr);planet.position.set(-34,14,-60);scene.add(planet);
+const moon=new THREE.Mesh(new THREE.SphereGeometry(2.4,32,24),new THREE.MeshStandardMaterial({color:0xbfc8ff,roughness:.8}));
+moon.position.set(30,-10,-48);scene.add(moon);
+const bigStar=glow(0xffd95e,60,.55);bigStar.position.set(34,22,-80);scene.add(bigStar);
+const streaks=[0,1].map(i=>{const g=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),new THREE.Vector3(5,-2,0)]);const l=new THREE.Line(g,new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0,fog:false}));l.userData={t:i*3};scene.add(l);return l;});
+const dyn=new THREE.Group();scene.add(dyn);
+const crystal=new THREE.Group();crystal.visible=false;scene.add(crystal);
+let ions=[],electrons=[],pairs=[],lineMesh=null,linePos=null,gen=0,landed=0,focusT=0;
+const focus=new THREE.Vector3();
+function hex(c){return '#'+new THREE.Color(c).getHexString();}
+function makeIon(kind,charge,R,ts){
+const d=(kind==='c'?CAT:ANI)[charge];
+const grp=new THREE.Group();
+const body=new THREE.Mesh(new THREE.SphereGeometry(R,40,32),new THREE.MeshStandardMaterial({color:d.c,roughness:.32,metalness:.05,emissive:d.c,emissiveIntensity:.2}));
+body.castShadow=true;body.userData.key=kind==='c'?'cat':'ani';grp.add(body);
+const face=new THREE.Group();
+const eyeM=new THREE.MeshBasicMaterial({color:0x1b1340}),whM=new THREE.MeshBasicMaterial({color:0xffffff}),chM=new THREE.MeshBasicMaterial({color:0xff9ab8,transparent:true,opacity:.85});
+[-1,1].forEach(s=>{
+const e=new THREE.Mesh(new THREE.SphereGeometry(R*.12,16,12),eyeM);e.scale.set(1,1.3,.5);e.position.set(s*R*.3,R*.1,R*.94);
+const h=new THREE.Mesh(new THREE.SphereGeometry(R*.04,8,8),whM);h.position.set(s*R*.3+R*.035,R*.16,R*.99);
+const ch=new THREE.Mesh(new THREE.SphereGeometry(R*.11,12,10),chM);ch.scale.set(1.3,.7,.3);ch.position.set(s*R*.52,-R*.15,R*.84);
+face.add(e,h,ch);});
+const mouth=new THREE.Mesh(new THREE.TorusGeometry(R*.09,R*.02,8,16,Math.PI),eyeM);
+mouth.rotation.z=Math.PI;mouth.position.set(0,-R*.04,R*.975);face.add(mouth);
+grp.add(face);
+grp.add(glow(d.c,R*4.2,.4));
+const t0=labelTex(d.s,hex(d.c)),t1=labelTex(d.s+(kind==='c'?SUP:SUM)[charge],hex(d.c));
+const lab=new THREE.Sprite(new THREE.SpriteMaterial({map:t0,transparent:true,depthTest:false}));
+lab.scale.set(1.9,.71,1);lab.position.y=R+.8;lab.renderOrder=10;grp.add(lab);
+grp.userData={kind,R,face,body,lab,t0,t1,ts,ph:Math.random()*6.28,tx:0,ty:0,tz:0};
+return grp;}
+function slotY(i,n){return (i-(n-1)/2)*2.4;}
+function layout(){
+const nc=ions.filter(o=>o.userData.kind==='c'),na=ions.filter(o=>o.userData.kind==='a');
+nc.forEach((o,i)=>{o.userData.tx=state.bonded?-1.4:-3.8;o.userData.ty=slotY(i,nc.length);});
+na.forEach((o,i)=>{o.userData.tx=state.bonded?1.4:3.8;o.userData.ty=slotY(i,na.length);});}
+function clearDyn(){while(dyn.children.length)dyn.remove(dyn.children[0]);ions=[];electrons=[];pairs=[];lineMesh=null;}
+function buildCrystal(){
+while(crystal.children.length)crystal.remove(crystal.children[0]);
+const cm=new THREE.MeshStandardMaterial({color:CAT[state.c].c,roughness:.3,emissive:CAT[state.c].c,emissiveIntensity:.18});
+const am=new THREE.MeshStandardMaterial({color:ANI[state.a].c,roughness:.3,emissive:ANI[state.a].c,emissiveIntensity:.18});
+const cg=new THREE.SphereGeometry(.4,24,18),ag=new THREE.SphereGeometry(.6,24,18);
+const seg=[],S=1.7;
+for(let x=-1;x<=1;x++)for(let y=-1;y<=1;y++)for(let z=-1;z<=1;z++){
+const isC=(x+y+z+3)%2===0;
+const m=new THREE.Mesh(isC?cg:ag,isC?cm:am);m.position.set(x*S,y*S,z*S);m.castShadow=true;m.userData.key='lat';crystal.add(m);
+if(x<1)seg.push(x*S,y*S,z*S,(x+1)*S,y*S,z*S);
+if(y<1)seg.push(x*S,y*S,z*S,x*S,(y+1)*S,z*S);
+if(z<1)seg.push(x*S,y*S,z*S,x*S,y*S,(z+1)*S);}
+const lg=new THREE.BufferGeometry();lg.setAttribute('position',new THREE.Float32BufferAttribute(seg,3));
+crystal.add(new THREE.LineSegments(lg,new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.3})));
+crystal.add(glow(0x9a8cff,14,.25));}
+function rebuild(){
+gen++;landed=0;state.bonded=false;clearDyn();
+const{nc,na,tot}=cnt();
+for(let i=0;i<nc;i++){const o=makeIon('c',state.c,1,.72);o.position.set(-3.8,slotY(i,nc),0);dyn.add(o);ions.push(o);}
+for(let i=0;i<na;i++){const o=makeIon('a',state.a,.8,1.3);o.position.set(3.8,slotY(i,na),0);dyn.add(o);ions.push(o);}
+layout();
+const cats=ions.filter(o=>o.userData.kind==='c'),anis=ions.filter(o=>o.userData.kind==='a');
+for(let k=0;k<tot;k++){
+const owner=cats[Math.floor(k/state.c)];
+const m=new THREE.Mesh(new THREE.SphereGeometry(.17,16,12),new THREE.MeshBasicMaterial({color:0xffe45e}));
+m.userData.key='e';m.add(glow(0xffd95e,1.1,.9));dyn.add(m);
+electrons.push({m,owner,ang:(k%state.c)*(6.283/state.c)+Math.random(),r:.45+(k%3)*.1,tilt:Math.random()*3,sp:1.8+Math.random()*.8,fl:null});}
+cats.forEach(c=>anis.forEach(a=>pairs.push([c,a])));
+linePos=new Float32Array(pairs.length*6);
+const lg=new THREE.BufferGeometry();lg.setAttribute('position',new THREE.BufferAttribute(linePos,3));
+lineMesh=new THREE.LineSegments(lg,new THREE.LineBasicMaterial({color:0xffd95e,transparent:true,opacity:0}));lineMesh.frustumCulled=false;dyn.add(lineMesh);
+ions.forEach(o=>{o.position.set(o.userData.tx,o.userData.ty,0);});
+buildCrystal();
+panel();}
+function start(){
+const anis=ions.filter(o=>o.userData.kind==='a');
+electrons.forEach((e,k)=>{
+const dest=anis[Math.floor(k/state.a)];
+e.fl={delay:.3+k*.28,t:0,dest,ang:Math.random()*6.28,r:.42+(k%state.a)*.12,from:null,ctrl:null};});}
+function ionize(){
+state.bonded=true;
+ions.forEach(o=>{o.userData.lab.material.map=o.userData.t1;o.userData.lab.material.needsUpdate=true;});
+layout();
+const f=$('fm');f.classList.remove('flash');void f.offsetWidth;f.classList.add('flash');}
+function go(){rebuild();const g=gen;setTimeout(()=>{if(g===gen)start();},700);}
+const _v=new THREE.Vector3();
+function orbitPos(owner,ang,r,tilt,out){
+const R=owner.userData.R*owner.scale.x+r;
+out.set(Math.cos(ang)*R,Math.sin(ang)*R*Math.cos(tilt),Math.sin(ang)*R*Math.sin(tilt)).add(owner.position);return out;}
+const clock=new THREE.Clock();
+function loop(){
+requestAnimationFrame(loop);
+const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;
+stars.rotation.y+=dt*.006;stars.material.opacity=.8+.15*Math.sin(t*1.7);
+planet.rotation.y+=dt*.05;moon.rotation.y+=dt*.1;
+streaks.forEach(l=>{const u=l.userData;u.t+=dt;if(u.t>7){u.t=0;l.position.set(-40+Math.random()*50,20+Math.random()*25,-70);}
+l.material.opacity=u.t<1.4?Math.sin(Math.PI*u.t/1.4):0;if(u.t<1.4){l.position.x+=dt*22;l.position.y-=dt*9;}});
+ring.rotation.z+=dt*.05;
+if(crystal.visible){crystal.rotation.y+=dt*.12;}
+ions.forEach(o=>{const u=o.userData;
+o.position.x+=(u.tx-o.position.x)*.05;o.position.z+=(0-o.position.z)*.05;
+const ty=u.ty+Math.sin(t*1.6+u.ph)*.14;o.position.y+=(ty-o.position.y)*.08;
+const s=state.bonded?u.ts:1;o.scale.setScalar(o.scale.x+(s-o.scale.x)*.07);
+u.face.lookAt(camera.position);});
+electrons.forEach(e=>{
+const f=e.fl;
+if(f&&f.delay>0){f.delay-=dt;}
+if(f&&f.delay<=0){
+if(!f.from){f.from=e.m.position.clone();f.ctrl=f.from.clone().lerp(f.dest.position,.5);f.ctrl.y+=2+Math.random()*1.5;f.ctrl.z+=(Math.random()-.5)*3;}
+f.t+=dt/1.2;const k=Math.min(f.t,1),q=k*k*(3-2*k);
+orbitPos(f.dest,f.ang,f.r,e.tilt,_v);
+const a=1-q;
+e.m.position.set(a*a*f.from.x+2*a*q*f.ctrl.x+q*q*_v.x,a*a*f.from.y+2*a*q*f.ctrl.y+q*q*_v.y,a*a*f.from.z+2*a*q*f.ctrl.z+q*q*_v.z);
+if(k>=1){e.owner=f.dest;e.ang=f.ang;e.r=f.r;e.fl=null;landed++;if(landed===electrons.length)setTimeout(()=>{if(landed===electrons.length)ionize();},350);}
+}else{
+e.ang+=dt*e.sp;orbitPos(e.owner,e.ang,e.r,e.tilt,e.m.position);}
+e.m.scale.setScalar(1+.25*Math.sin(t*8+e.tilt*5));});
+if(lineMesh){pairs.forEach((p,i)=>{linePos[i*6]=p[0].position.x;linePos[i*6+1]=p[0].position.y;linePos[i*6+2]=p[0].position.z;linePos[i*6+3]=p[1].position.x;linePos[i*6+4]=p[1].position.y;linePos[i*6+5]=p[1].position.z;});
+lineMesh.geometry.attributes.position.needsUpdate=true;
+lineMesh.material.opacity=state.bonded?.55+.3*Math.sin(t*4):0;}
+if(focusT>0){focusT-=dt;controls.target.lerp(focus,.08);}
+controls.update();
+hotspots();
+renderer.render(scene,camera);}
+function place(el,v,off){
+_v.copy(v);_v.y+=off;_v.project(camera);
+const vis=_v.z<1&&Math.abs(_v.x)<1.05&&Math.abs(_v.y)<1.05;
+el.style.display=vis?'flex':'none';
+el.style.left=((_v.x*.5+.5)*W)+'px';el.style.top=((-_v.y*.5+.5)*H)+'px';}
+function hotspots(){
+const hc=$('hs-cat'),ha=$('hs-ani'),he=$('hs-e'),hb=$('hs-bond');
+if(state.crystal){hc.style.display=ha.style.display=he.style.display='none';hb.dataset.k='lat';place(hb,new THREE.Vector3(0,0,0),3.4);return;}
+hb.dataset.k='bond';
+const c=ions.find(o=>o.userData.kind==='c'),a=ions.find(o=>o.userData.kind==='a');
+if(!c||!a)return;
+place(hc,c.position,c.userData.R*c.scale.x+1.7);
+place(ha,a.position,a.userData.R*a.scale.x+1.7);
+if(electrons[0])place(he,electrons[0].m.position,.5);
+_v.copy(c.position).lerp(a.position,.5);place(hb,_v,-.1);}
+function panel(){
+const{nc,na,tot}=cnt(),cs=state.c,as=state.a,C=CAT[cs],A=ANI[as];
+$('cv').textContent='+'+cs;$('av').textContent='-'+as;
+$('fm').innerHTML=C.s+(nc>1?'<sub>'+nc+'</sub>':'')+A.s+(na>1?'<sub>'+na+'</sub>':'');
+$('fs').textContent=nc+' ไอออน '+C.s+SUP[cs]+' + '+na+' ไอออน '+A.s+SUM[as]+' · ถ่ายโอนอิเล็กตรอนรวม '+tot+' ตัว';
+$('cr').innerHTML='ไขว้ตัวเลขประจุ: ประจุ <b>'+as+'</b> ของไอออนลบ → เป็นจำนวนไอออนบวก และประจุ <b>'+cs+'</b> ของไอออนบวก → เป็นจำนวนไอออนลบ แล้วทอนเป็นอัตราส่วนต่ำสุด ได้ '+C.s+' : '+A.s+' = <b>'+nc+' : '+na+'</b>';
+$('bl').innerHTML='('+nc+' × +'+cs+') + ('+na+' × -'+as+') = +'+(nc*cs)+' - '+(na*as)+' = <b>0</b><br>เป็นกลางทางไฟฟ้าพอดี';}
+function info(key){
+const{nc,na,tot}=cnt(),cs=state.c,as=state.a,C=CAT[cs],A=ANI[as];
+const fm=C.s+(nc>1?nc:'')+A.s+(na>1?na:'');
+const T={
+cat:['🌟','ไอออนบวก '+C.s+SUP[cs],'อะตอมโลหะ'+C.n+' <b>ให้ '+cs+' อิเล็กตรอน</b> จึงมีประจุ +'+cs+' และมีขนาดเล็กลงกว่าอะตอมเดิม เพราะเสียอิเล็กตรอนชั้นนอกสุดไป'],
+ani:['🪐','ไอออนลบ '+A.s+SUM[as],'อะตอมอโลหะ'+A.n+' <b>รับ '+as+' อิเล็กตรอน</b> จึงมีประจุ -'+as+' และมีขนาดใหญ่ขึ้น เพราะอิเล็กตรอนเพิ่มทำให้แรงผลักกันมากขึ้น'],
+e:['☄️','อิเล็กตรอน (e⁻)','อนุภาคประจุลบที่ถูกถ่ายโอนจากโลหะไปยังอโลหะ ในสูตร '+fm+' มีการถ่ายโอนรวม <b>'+tot+' ตัว</b> ทำให้ทั้งสองฝั่งมีการจัดเรียงอิเล็กตรอนเสถียรเหมือนแก๊สมีตระกูล'],
+bond:['⚡','แรงดึงดูดไฟฟ้าสถิต','ไอออนบวกและไอออนลบดึงดูดกันด้วยแรงไฟฟ้าสถิต นี่คือ <b>พันธะไอออนิก</b> ประจุรวมสุทธิ = ('+nc+'×+'+cs+') + ('+na+'×-'+as+') = 0 จึงเขียนสูตรเป็น <b>'+fm+'</b>'],
+lat:['💎','ผลึกไอออนิก','ไอออนบวกและไอออนลบเรียงสลับกันเป็นโครงสร้างสามมิติที่ต่อเนื่อง ไม่ใช่โมเลกุลเดี่ยว สูตร <b>'+fm+'</b> จึงบอกเพียงอัตราส่วนไอออนต่ำสุด สารประกอบไอออนิกมีจุดหลอมเหลวสูงและเปราะ']};
+return T[key];}
+function show(key,pos){
+const d=info(key);if(!d)return;
+const box=$('info');
+$('ii').textContent=d[0];$('it').textContent=d[1];$('ip').innerHTML=d[2];
+box.classList.remove('show');void box.offsetWidth;box.classList.add('show');
+if(pos){focus.copy(pos);focusT=1.3;}}
+const ray=new THREE.Raycaster(),ptr=new THREE.Vector2();
+function pick(e){
+const r=canvas.getBoundingClientRect();
+ptr.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);
+ray.setFromCamera(ptr,camera);
+const list=state.crystal?crystal.children.filter(o=>o.isMesh):ions.map(o=>o.userData.body).concat(electrons.map(x=>x.m));
+const h=ray.intersectObjects(list,false)[0];
+return h?{key:h.object.userData.key,pos:h.object.getWorldPosition(new THREE.Vector3())}:null;}
+let down=null;
+canvas.addEventListener('pointerdown',e=>{down=[e.clientX,e.clientY];});
+canvas.addEventListener('pointerup',e=>{if(!down)return;const m=Math.hypot(e.clientX-down[0],e.clientY-down[1]);down=null;if(m<5){const h=pick(e);if(h)show(h.key,state.crystal?new THREE.Vector3():h.pos);}});
+canvas.addEventListener('pointermove',e=>{if(e.buttons)return;canvas.style.cursor=pick(e)?'pointer':'grab';});
+document.querySelectorAll('.hs').forEach(b=>b.addEventListener('click',()=>{
+const k=b.dataset.k;let pos=null;
+if(k==='cat'){const o=ions.find(x=>x.userData.kind==='c');pos=o&&o.position.clone();}
+if(k==='ani'){const o=ions.find(x=>x.userData.kind==='a');pos=o&&o.position.clone();}
+if(k==='bond'||k==='lat')pos=new THREE.Vector3();
+show(k,pos);}));
+$('ix').addEventListener('click',()=>$('info').classList.remove('show'));
+$('bPlay').addEventListener('click',()=>{if(state.crystal)toggleCrystal();go();});
+function toggleCrystal(){
+state.crystal=!state.crystal;
+crystal.visible=state.crystal;dyn.visible=!state.crystal;
+$('bCry').classList.toggle('on',state.crystal);
+$('bCry').textContent=state.crystal?'⚛️ กลับสู่ไอออนคู่':'💎 ผลึกไอออนิก';
+if(state.crystal){show('lat',new THREE.Vector3());}else{$('info').classList.remove('show');}}
+$('bCry').addEventListener('click',toggleCrystal);
+$('bCam').addEventListener('click',camReset);
+function setCharges(c,a){state.c=c;state.a=a;$('sc').value=c;$('sa').value=a;go();}
+$('sc').addEventListener('input',e=>setCharges(+e.target.value,state.a));
+$('sa').addEventListener('input',e=>setCharges(state.c,+e.target.value));
+document.querySelectorAll('.presets button').forEach(b=>b.addEventListener('click',()=>setCharges(+b.dataset.c,+b.dataset.a)));
+const Q=[
+{q:'สารประกอบที่เกิดจาก Mg²⁺ และ Cl⁻ มีสูตรเคมีอย่างไร?',o:['MgCl','MgCl₂','Mg₂Cl','Mg₂Cl₂'],a:1,e:'Mg มีประจุ +2 และ Cl มีประจุ -1 เมื่อไขว้ประจุต้องใช้ Cl⁻ 2 ตัวต่อ Mg²⁺ 1 ตัว ได้ MgCl₂'},
+{q:'ไอออน Al³⁺ รวมกับ O²⁻ ต้องใช้จำนวนไอออนตามลำดับเท่าใดจึงดุลประจุพอดี?',o:['Al³⁺ 1 ตัว : O²⁻ 1 ตัว','Al³⁺ 3 ตัว : O²⁻ 2 ตัว','Al³⁺ 2 ตัว : O²⁻ 3 ตัว','Al³⁺ 3 ตัว : O²⁻ 3 ตัว'],a:2,e:'Al³⁺ 2 ตัว (+6) และ O²⁻ 3 ตัว (-6) ประจุรวมเป็น 0 ได้ Al₂O₃'},
+{q:'ข้อใดอธิบายการเกิดพันธะไอออนิกได้ถูกต้อง?',o:['อะตอมโลหะให้อิเล็กตรอนแก่อโลหะ เกิดแรงดึงดูดระหว่างไอออนบวกและลบ','อะตอมโลหะและอโลหะใช้อิเล็กตรอนร่วมกันเป็นคู่ๆ','อะตอมอโลหะให้อิเล็กตรอนแก่โลหะจนเกิดเป็นไอออนลบ','อิเล็กตรอนหลุดออกจากทั้งสองอะตอมกลายเป็นอิเล็กตรอนอิสระ'],a:0,e:'พันธะไอออนิกเกิดจากโลหะให้อิเล็กตรอนแก่อโลหะ เกิดเป็นไอออนบวกและลบที่ดึงดูดกันด้วยแรงไฟฟ้าสถิต'}];
+const qb=$('quiz');
+function renderQuiz(){
+qb.innerHTML='';$('sv').textContent='0';
+Q.forEach((q,i)=>{
+const d=document.createElement('div');d.className='card q';d.style.marginBottom='10px';
+d.innerHTML='<p><b>ข้อ '+(i+1)+'</b> '+q.q+'</p><div class="opts">'+q.o.map((t,j)=>'<button data-i="'+i+'" data-j="'+j+'">'+'กขคง'[j]+'. '+t+'</button>').join('')+'</div><div class="fb"></div>';
+qb.appendChild(d);});}
+qb.addEventListener('click',e=>{
+const b=e.target.closest('button');if(!b)return;
+const i=+b.dataset.i,j=+b.dataset.j,card=b.closest('.q');
+if(card.dataset.done)return;
+card.dataset.done='1';
+const ok=j===Q[i].a;
+if(ok)card.dataset.ok='1';
+card.querySelectorAll('button').forEach((x,k)=>{x.disabled=true;if(k===Q[i].a)x.classList.add('ok');else if(k===j)x.classList.add('no');});
+const fb=card.querySelector('.fb');
+fb.className='fb '+(ok?'g':'r');
+fb.innerHTML=(ok?'✅ <b>ถูกต้อง!</b> ':'❌ <b>ยังไม่ถูกต้อง</b> ')+Q[i].e;
+$('sv').textContent=qb.querySelectorAll('[data-ok]').length;});
+$('qr').addEventListener('click',renderQuiz);
+renderQuiz();
+new ResizeObserver(resize).observe($('stage'));
+resize();camReset();rebuild();
+setTimeout(start,900);
+setTimeout(()=>show('bond',null),4200);
+loop();
+})();
+</script>
+</body>
+</html>
